@@ -1,0 +1,11 @@
+supply_chain_dbt:
+  target: dev
+
+  outputs:
+    dev:
+      type: snowflake
+      role: ACCOUNTADMIN
+      warehouse: SUPPLY_CHAIN_WH
+      database: SUPPLY_CHAIN_ANALYTICS
+      schema: STAGING
+      threads: 4

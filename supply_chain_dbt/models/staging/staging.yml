@@ -1,0 +1,101 @@
+version: 2
+
+models:
+  - name: stg_suppliers
+    description: Cleaned supplier master data.
+    columns:
+      - name: supplier_id
+        tests:
+          - not_null
+          - unique
+
+      - name: supplier_name
+        tests:
+          - not_null
+
+  - name: stg_projects
+    description: Cleaned GPS manufacturing projects.
+    columns:
+      - name: project_id
+        tests:
+          - not_null
+          - unique
+
+      - name: project_name
+        tests:
+          - not_null
+
+  - name: stg_products
+    description: Cleaned GPS products and components.
+    columns:
+      - name: product_id
+        tests:
+          - not_null
+          - unique
+
+      - name: project_id
+        tests:
+          - relationships:
+              to: ref('stg_projects')
+              field: project_id
+
+  - name: stg_purchase_orders
+    description: Cleaned synthetic purchase-order headers.
+    columns:
+      - name: purchase_order_id
+        tests:
+          - not_null
+          - unique
+
+      - name: supplier_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_suppliers')
+              field: supplier_id
+
+      - name: order_status
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - OPEN
+                - CLOSED
+                - CANCELLED
+
+  - name: stg_purchase_order_lines
+    description: Cleaned synthetic purchase-order lines.
+    columns:
+      - name: purchase_order_line_id
+        tests:
+          - not_null
+          - unique
+
+      - name: purchase_order_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_purchase_orders')
+              field: purchase_order_id
+
+      - name: product_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_products')
+              field: product_id
+
+  - name: stg_inspections
+    description: Cleaned synthetic quality inspections.
+    columns:
+      - name: inspection_id
+        tests:
+          - not_null
+          - unique
+
+      - name: purchase_order_line_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_purchase_order_lines')
+              field: purchase_order_line_id

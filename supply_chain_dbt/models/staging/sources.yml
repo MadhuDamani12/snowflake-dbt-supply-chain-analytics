@@ -1,0 +1,32 @@
+version: 2
+
+sources:
+  - name: raw_supply_chain
+    description: Raw NIST reference data and synthetic procurement transactions.
+    database: SUPPLY_CHAIN_ANALYTICS
+    schema: RAW
+
+    tables:
+      - name: raw_suppliers
+        identifier: RAW_SUPPLIERS
+        description: One raw record per NIST supplier.
+
+      - name: raw_projects
+        identifier: RAW_PROJECTS
+        description: One raw record per GPS manufacturing project.
+
+      - name: raw_products
+        identifier: RAW_PRODUCTS
+        description: One raw record per GPS bill-of-materials item.
+
+      - name: raw_purchase_orders
+        identifier: RAW_PURCHASE_ORDERS
+        description: One synthetic record per purchase order.
+
+      - name: raw_purchase_order_lines
+        identifier: RAW_PURCHASE_ORDER_LINES
+        description: One synthetic record per purchase-order line.
+
+      - name: raw_inspections
+        identifier: RAW_INSPECTIONS
+        description: One synthetic record per quality inspection.

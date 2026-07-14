@@ -1,0 +1,39 @@
+name: supply_chain_dbt
+version: 1.0.0
+config-version: 2
+
+profile: supply_chain_dbt
+
+model-paths:
+  - models
+
+analysis-paths:
+  - analyses
+
+test-paths:
+  - tests
+
+seed-paths:
+  - seeds
+
+snapshot-paths:
+  - snapshots
+
+clean-targets:
+  - target
+  - dbt_packages
+
+models:
+  supply_chain_dbt:
+
+    staging:
+      +schema: STAGING
+      +materialized: view
+
+    intermediate:
+      +schema: INTERMEDIATE
+      +materialized: view
+
+    marts:
+      +schema: MARTS
+      +materialized: table
