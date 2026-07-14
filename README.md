@@ -209,22 +209,6 @@ docs/                 Architecture, methodology, and data dictionary
 
 The Snowflake trial may expire, but the SQL, dbt code, data exports, dashboard image, and documentation remain available in this repository.
 
-## What I learned
-
-- How Snowflake warehouses, databases, schemas, and tables work together
-- How to create a layered warehouse structure using raw, staging, intermediate, and mart schemas
-- How dbt models modularize SQL transformations
-- How `source()` and `ref()` create lineage and control execution order
-- How dbt materializations determine whether models become views or tables
-- How dbt tests validate data quality and referential integrity
-- How to define model grain and calculate procurement KPIs
-- How Tableau uses a final analytics mart for reporting
-- How data moves from source files to a decision-support dashboard
-
-## Interview explanation
-
-> Procurement teams cannot evaluate suppliers using price alone because late deliveries, defective products, and unfinished orders create operational and financial risk. I built this academic project to understand a modern analytics workflow. I stored the raw data in Snowflake, used dbt to create staged and analysis-ready models, added data-quality tests, and built procurement KPIs at the order-line and supplier levels. I then used the final marts in Tableau to create a supplier-performance dashboard. The operational transactions are synthetic, so the project demonstrates the technical workflow rather than claiming real company findings.
-
 ## Limitations
 
 - Operational transactions are synthetic.
