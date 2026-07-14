@@ -1,119 +1,144 @@
 # Supplier Risk and Procurement Performance
 
-## The problem—in simple words
-
-Imagine a company like **Apple** making a new phone. Apple cannot build the phone alone. It buys screens, batteries, chips, cameras, and many other parts from different suppliers.
-
-Now imagine three things happen:
-
-- The screen supplier delivers two weeks late.
-- The battery supplier delivers on time, but some batteries are defective.
-- A large chip order is still unfinished, leaving millions of dollars tied to an open order.
-
-A supplier may offer a low price and still cost the company money through delays, defects, and unfinished orders. A procurement manager therefore needs to know more than **“Who is cheapest?”**
-
-The manager needs to ask:
-
-1. How much are we spending?
-2. Are suppliers delivering on time?
-3. Are the delivered products passing inspection?
-4. How much money is connected to unfinished orders?
-5. Which suppliers may need attention?
-
-This project builds a simple data system to answer those questions.
-
-> **Important:** Apple is only an easy-to-understand example. This project does not contain Apple data. Supplier and product reference files come from a NIST sample dataset, while the purchase orders, deliveries, prices, and inspections are synthetic.
-
-## What I built
-
-I built a small end-to-end analytics pipeline:
-
-```text
-Supplier, product, and purchasing data
-                  ↓
-        Snowflake stores the data
-                  ↓
-    dbt cleans, joins, tests, and calculates
-                  ↓
-      Tableau shows the final dashboard
-```
+An end-to-end analytics project using **Snowflake, dbt, SQL, and Tableau** to transform procurement data into supplier performance and risk insights.
 
 [View the interactive Tableau dashboard](https://public.tableau.com/views/SupplierRiskandProcurementPerformance/Dashboard1?:showVizHome=no)
 
 ![Supplier Risk and Procurement Performance dashboard](dashboard/supplier_risk_dashboard.png)
 
-## What each tool does
+## Business problem
 
-### Snowflake: the organized storage room
+Consider an electronics manufacturer that purchases screens, batteries, microcontrollers, and other components from several suppliers.
 
-Snowflake is a cloud data warehouse. Think of it as a large, organized storage room for data.
+A supplier offering the lowest price is not always the best-performing supplier. Late deliveries can interrupt production, defective components can create rework, and unfinished purchase orders can leave significant value exposed. However, the information needed to evaluate these risks may be distributed across supplier records, product files, purchase orders, delivery dates, and inspection results.
 
-In this project, Snowflake stores:
+The procurement team needs a consolidated view that answers:
 
-- Suppliers
-- Products and projects
-- Purchase orders
-- Individual items within each order
-- Promised and actual delivery dates
-- Quality-inspection results
+- How much are we spending with suppliers?
+- Are suppliers meeting promised delivery dates?
+- What percentage of inspected units are defective?
+- How much value is tied to open purchase orders?
+- Which suppliers show higher delivery or quality risk?
 
-The data is separated into layers:
+This project creates that analytical view.
 
-- **RAW:** the original loaded and generated data
-- **STAGING:** cleaned and consistently named data
-- **INTERMEDIATE:** reusable relationships between data
-- **MARTS:** final tables prepared for business analysis
+> A company such as Apple is a useful real-world analogy because it depends on many component suppliers, but this project does **not** use Apple data. Supplier, project, and product reference files come from a NIST sample dataset. Purchase orders, order lines, deliveries, prices, and inspections are synthetic.
 
-### dbt: the recipe book and quality checker
+## Project objective
 
-Raw data is rarely ready for a dashboard. Names may be inconsistent, related information may be stored in different tables, and invalid records may exist.
+The primary objective was to learn how a modern analytics workflow operates:
 
-dbt tells Snowflake how to transform that raw data. In this project, dbt:
+1. Store raw data in a cloud data warehouse.
+2. Transform raw tables into analysis-ready models.
+3. Apply automated data-quality tests.
+4. Build business KPIs from the transformed data.
+5. Present the results in an interactive dashboard.
 
-- Cleans supplier and product information
-- Connects orders to the correct suppliers and products
-- Calculates spend and price variance
-- Compares promised and actual delivery dates
-- Calculates delivery and defect rates
-- Calculates open-order exposure
-- Tests for missing IDs, duplicate IDs, broken relationships, and impossible quantities
+The project is intentionally scoped for an associate-level data analyst or analytics engineer. It demonstrates the relationship between Snowflake, dbt, and Tableau without adding unnecessary orchestration, machine learning, or production infrastructure.
 
-dbt does not replace Snowflake. **Snowflake performs and stores the work; dbt organizes the transformation logic and tests.**
+## Solution architecture
 
-### Tableau: the picture of the answer
-
-Tableau connects to the final analysis tables and presents the results visually. A procurement manager can understand the major risks without reading thousands of database rows.
-
-## The data story
-
-Suppose one purchase order contains 1,000 batteries:
-
-```text
-Promised delivery: March 1
-Actual delivery:   March 8
-Inspected units:   1,000
-Rejected units:    20
+```mermaid
+flowchart LR
+    A[NIST reference CSVs] --> B[Snowflake RAW schema]
+    C[Synthetic procurement transactions] --> B
+    B --> D[dbt staging models]
+    D --> E[dbt intermediate model]
+    D --> F[dbt marts]
+    E --> F
+    F --> G[Tableau dashboard]
 ```
 
-dbt turns those facts into useful information:
+### Snowflake
 
-- The order arrived **7 days late**.
-- It was **not delivered on time**.
-- Its defect rate was **2%** because 20 of 1,000 inspected units were rejected.
+Snowflake serves as the cloud data warehouse. It stores and processes supplier, product, purchase-order, delivery, and inspection data.
 
-The same calculation is repeated across all order lines. The results can then be grouped by supplier and displayed in Tableau.
+The database is organized into four schemas:
 
-## Main measurements
-
-| Measurement | Simple meaning |
+| Schema | Purpose |
 |---|---|
-| **Total spend** | Total value of all ordered products |
-| **On-time delivery** | Percentage of delivered order lines received by the promised date |
-| **Defect rate** | Rejected units divided by inspected units |
-| **Open-order exposure** | Value of orders that are still open |
-| **Supplier risk** | A simple classification based on delivery and quality performance |
+| `RAW` | Original reference data and generated procurement transactions |
+| `STAGING` | Cleaned, renamed, and typed source data |
+| `INTERMEDIATE` | Reusable transformation logic and relationships |
+| `MARTS` | Final business-level tables used for analysis and reporting |
 
-## Results from this synthetic scenario
+An X-Small virtual warehouse provides the compute required to execute SQL queries and dbt models. Auto-suspend is enabled to reduce unnecessary credit usage.
+
+### dbt
+
+dbt manages the SQL transformation layer. Snowflake executes the SQL, while dbt organizes models, dependencies, materializations, documentation, and tests.
+
+The project uses:
+
+- `source()` to identify raw Snowflake tables
+- `ref()` to connect models and establish dependency order
+- Staging views to standardize names, text values, dates, and data types
+- An intermediate view to parse product-to-supplier relationships
+- Mart tables to store analysis-ready procurement results
+- Schema tests for uniqueness, completeness, accepted values, and referential integrity
+- A custom singular test for invalid order and inspection quantities
+- A custom schema-name macro so models build directly into the intended schemas
+
+### Tableau
+
+Tableau consumes the final dbt mart output. The dashboard summarizes procurement spend, on-time delivery, quality, open-order exposure, supplier performance, and monthly trends.
+
+## Data model
+
+```text
+SUPPLIERS ──< PURCHASE ORDERS ──< PURCHASE ORDER LINES >── PRODUCTS
+                                          │
+                                          └── INSPECTIONS
+```
+
+- One supplier can have many purchase orders.
+- One purchase order can contain many order lines.
+- Each order line references one product.
+- A delivered order line can have an inspection record.
+
+### Final marts
+
+#### `purchase_order_analysis`
+
+**Grain:** one row per purchase-order line.
+
+This mart combines order, supplier, product, delivery, pricing, and inspection data. It calculates:
+
+- Order-line value
+- Price variance amount
+- Days late
+- On-time delivery indicator
+- Line-level defect rate
+- Open-order exposure
+
+#### `supplier_performance`
+
+**Grain:** one row per supplier.
+
+This mart aggregates line-level data into:
+
+- Total orders and order lines
+- Total spend
+- Total price variance
+- Average days late
+- On-time delivery percentage
+- Defect-rate percentage
+- Open-order exposure
+- Illustrative supplier-risk level
+
+## KPI definitions
+
+| KPI | Definition |
+|---|---|
+| **Total spend** | Sum of `ordered quantity × unit price` across purchase-order lines |
+| **On-time delivery %** | Delivered lines received on or before the promised date divided by delivered lines |
+| **Defect rate %** | Total rejected units divided by total inspected units |
+| **Open-order exposure** | Order-line value associated with purchase orders having an `OPEN` status |
+| **Supplier risk level** | Illustrative classification based on delivery and defect-rate thresholds |
+
+For example, if 1,000 units were promised for March 1, delivered on March 8, and 20 units failed inspection, the delivery was seven days late and the inspection defect rate was 2%.
+
+## Results from the synthetic scenario
 
 | KPI | Result |
 |---|---:|
@@ -122,94 +147,90 @@ The same calculation is repeated across all order lines. The results can then be
 | Defect rate | 0.96% |
 | Open-order exposure | $27.41M |
 
-These are results from a **fictional learning scenario**, not real company results. The low on-time rate creates an obvious delivery problem that can be explored in the dashboard.
+These values describe a synthetic learning scenario and should not be interpreted as real organizational performance. The scenario intentionally produces a visible delivery-performance problem for analysis.
 
-## How the tables connect
+## Data-quality testing
 
-```text
-SUPPLIERS ──< PURCHASE ORDERS ──< ORDER LINES >── PRODUCTS
-                                      │
-                                      └── INSPECTIONS
-```
+The dbt project validates:
 
-- One supplier can receive many purchase orders.
-- One purchase order can contain many order lines.
-- Each order line identifies a product.
-- A delivered order line can have a quality inspection.
+- Primary identifiers are not null and unique.
+- Purchase orders reference valid suppliers.
+- Order lines reference valid orders and products.
+- Inspections reference valid order lines.
+- Order statuses belong to the accepted set: `OPEN`, `CLOSED`, or `CANCELLED`.
+- Ordered, received, inspected, and rejected quantities remain within valid ranges.
+- Rejected quantity never exceeds inspected quantity.
+- Received quantity never exceeds ordered quantity.
 
-dbt joins these pieces into `purchase_order_analysis`, where each row represents one purchase-order line. It then summarizes those rows into `supplier_performance`, where each row represents one supplier.
+A failing test returns the invalid records so they can be investigated before the marts are used for reporting.
 
-## What I learned
-
-This project was created to understand the basic modern analytics workflow—not to imitate a senior data-engineering platform.
-
-Through the project, I learned:
-
-- How Snowflake warehouses, databases, schemas, and tables are organized
-- How CSV data is loaded into Snowflake
-- Why raw data should be separated from final reporting tables
-- How dbt models transform data with SQL
-- How `source()` points to raw tables
-- How `ref()` connects dbt models and controls build order
-- How dbt tests detect missing, duplicate, unrelated, or invalid data
-- How a final dbt mart becomes a Tableau data source
-- How raw files become a business dashboard
-
-The project intentionally does **not** include Airflow, machine learning, APIs, or complicated cloud infrastructure. Those tools are not necessary for understanding this workflow.
-
-## Project structure
+## Repository structure
 
 ```text
 snowflake/
-  SQL scripts that create the environment, tables, and synthetic records
+  01_setup.sql
+  02_create_raw_tables.sql
+  03_create_operational_tables.sql
+  04_generate_purchase_orders.sql
+  05_generate_order_lines.sql
+  06_generate_inspections.sql
 
 supply_chain_dbt/
-  dbt staging, intermediate, and mart models plus data tests
+  macros/
+  models/staging/
+  models/intermediate/
+  models/marts/
+  tests/
 
-data/source/
-  NIST GPS supplier, project, and product sample files
-
-data/outputs/
-  CSV exports of the final dbt analysis tables
-
-dashboard/
-  Tableau dashboard image and public-dashboard link
-
-docs/
-  Architecture, methodology, and data dictionary
+data/source/          NIST reference CSV files
+data/outputs/         Exports of the final dbt marts
+dashboard/            Dashboard image and Tableau Public link
+docs/                 Architecture, methodology, and data dictionary
 ```
 
-## How to reproduce it
+## How to reproduce the project
 
 1. Create or open a Snowflake account.
-2. Run the SQL files in `snowflake/` in numeric order.
-3. After script 02, load the three files from `data/source/`:
-   - `GPS_suppliers.csv` into `RAW_SUPPLIERS`
-   - `GPS_projects.csv` into `RAW_PROJECTS`
-   - `GPS_products.csv` into `RAW_PRODUCTS`
-4. Run scripts 03–06 to create the synthetic purchase orders, order lines, and inspections.
-5. Copy `supply_chain_dbt/profiles.example.yml` to your dbt profiles location and update its settings if needed.
-6. Run the dbt project:
+2. Run the files in `snowflake/` in numeric order.
+3. After script 02, load the source files into their matching raw tables:
+   - `GPS_suppliers.csv` → `RAW_SUPPLIERS`
+   - `GPS_projects.csv` → `RAW_PROJECTS`
+   - `GPS_products.csv` → `RAW_PRODUCTS`
+4. Run scripts 03–06 to create the synthetic operational tables and records.
+5. Copy `supply_chain_dbt/profiles.example.yml` to the appropriate dbt profiles location and update the connection settings if required.
+6. From the dbt project directory, run:
 
    ```bash
    dbt run --target dev
    dbt test --target dev
    ```
 
-7. Connect Tableau to the final marts, or use the included CSV exports.
+7. Connect Tableau to the `MARTS` models or use the CSV exports in `data/outputs/`.
 
-The Snowflake trial may expire, but the SQL, dbt code, output files, dashboard image, and documentation remain available in this repository.
+The Snowflake trial may expire, but the SQL, dbt code, data exports, dashboard image, and documentation remain available in this repository.
 
-## How I would explain it in an interview
+## What I learned
 
-> Procurement teams cannot evaluate suppliers using price alone because late deliveries, defective products, and unfinished orders can create additional cost and risk. I built this academic project to understand a modern analytics workflow. I stored supplier and purchasing data in Snowflake, used dbt to clean and connect the data, calculated and tested procurement KPIs, and presented the final results in Tableau. The transactions are synthetic, so the project demonstrates the technical process rather than claiming real company findings.
+- How Snowflake warehouses, databases, schemas, and tables work together
+- How to create a layered warehouse structure using raw, staging, intermediate, and mart schemas
+- How dbt models modularize SQL transformations
+- How `source()` and `ref()` create lineage and control execution order
+- How dbt materializations determine whether models become views or tables
+- How dbt tests validate data quality and referential integrity
+- How to define model grain and calculate procurement KPIs
+- How Tableau uses a final analytics mart for reporting
+- How data moves from source files to a decision-support dashboard
+
+## Interview explanation
+
+> Procurement teams cannot evaluate suppliers using price alone because late deliveries, defective products, and unfinished orders create operational and financial risk. I built this academic project to understand a modern analytics workflow. I stored the raw data in Snowflake, used dbt to create staged and analysis-ready models, added data-quality tests, and built procurement KPIs at the order-line and supplier levels. I then used the final marts in Tableau to create a supplier-performance dashboard. The operational transactions are synthetic, so the project demonstrates the technical workflow rather than claiming real company findings.
 
 ## Limitations
 
-- The operational transactions are synthetic.
-- The supplier-risk rules are simple learning rules, not a production risk model.
-- The dashboard demonstrates analysis techniques and should not be used for real purchasing decisions.
-- Tableau Public is public and should never contain confidential company data.
+- Operational transactions are synthetic.
+- Supplier-risk thresholds are illustrative rules rather than a validated production model.
+- The project demonstrates batch analytics and does not implement real-time ingestion or orchestration.
+- Tableau Public is public and should not contain confidential business data.
 
 ## Author
 
