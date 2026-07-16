@@ -1,6 +1,6 @@
 # Supplier Risk and Procurement Performance
 
-An end-to-end analytics project using **Snowflake, dbt, SQL, and Tableau** to transform procurement data into supplier performance and risk insights.
+An end-to-end analytics and business-analysis case study using **Snowflake, dbt, SQL, and Tableau** to transform procurement data into supplier performance and risk insights—and to trace those insights back to stakeholders, requirements, acceptance criteria, and business decisions.
 
 [View the interactive Tableau dashboard](https://public.tableau.com/views/SupplierRiskandProcurementPerformance/Dashboard1?:showVizHome=no)
 
@@ -24,17 +24,47 @@ This project creates that analytical view.
 
 > A company such as Apple is a useful real-world analogy because it depends on many component suppliers, but this project does **not** use Apple data. Supplier, project, and product reference files come from a NIST sample dataset. Purchase orders, order lines, deliveries, prices, and inspections are synthetic.
 
+## Decisions supported
+
+The solution is designed to support decisions such as:
+
+- Which suppliers require a performance review or escalation?
+- Where should buyers investigate delivery delays?
+- Which open commitments deserve value-based follow-up?
+- Where should quality teams investigate rejected quantities?
+- Which KPI definitions and risk thresholds require stakeholder approval before production use?
+
 ## Project objective
 
-The primary objective was to learn how a modern analytics workflow operates:
+The primary objective was to learn how a modern analytics workflow operates and how a business analyst connects the workflow to an organizational decision:
 
 1. Store raw data in a cloud data warehouse.
 2. Transform raw tables into analysis-ready models.
 3. Apply automated data-quality tests.
 4. Build business KPIs from the transformed data.
 5. Present the results in an interactive dashboard.
+6. Translate stakeholder needs into prioritized and testable requirements.
+7. Trace requirements to models, dashboard outputs, and UAT evidence.
+8. Document findings, limitations, recommendations, and unresolved decisions.
 
-The project is intentionally scoped for an associate-level data analyst or analytics engineer. It demonstrates the relationship between Snowflake, dbt, and Tableau without adding unnecessary orchestration, machine learning, or production infrastructure.
+The project is intentionally scoped for an associate-level data analyst, business analyst, or analytics engineer. It demonstrates the relationship between business requirements, Snowflake, dbt, and Tableau without adding unnecessary orchestration, machine learning, or production infrastructure.
+
+## Business-analysis deliverables
+
+The [`docs/business-analysis`](docs/business-analysis/) folder adds the BA layer around the implemented analytics solution:
+
+| Deliverable | What it demonstrates |
+|---|---|
+| [Business case and scope](docs/business-analysis/01_business_case_and_scope.md) | Problem definition, objectives, scope, assumptions, constraints, risks, and measures of success |
+| [Stakeholder analysis](docs/business-analysis/02_stakeholder_analysis.md) | Stakeholder decisions, information needs, influence, discovery questions, and RACI |
+| [As-is and to-be process](docs/business-analysis/03_as_is_to_be_process.md) | Current pain points, proposed workflow, process controls, and change impact |
+| [Business requirements](docs/business-analysis/04_business_requirements.md) | Prioritized business, functional, data-quality, and non-functional requirements |
+| [User stories](docs/business-analysis/05_user_stories_and_acceptance_criteria.md) | Testable user outcomes and acceptance criteria |
+| [Findings and recommendations](docs/business-analysis/06_findings_and_recommendations.md) | Evidence-based interpretation, prioritized actions, and benefit hypotheses |
+| [Decision log](docs/business-analysis/07_decision_log.md) | KPI rationale, trade-offs, ownership, and open production decisions |
+| [Traceability and UAT workbook](docs/business-analysis/08_requirements_traceability_and_uat.xlsx) | Requirements-to-model-to-dashboard traceability, KPI catalog, UAT evidence, and production gaps |
+
+The case study distinguishes **implemented prototype capabilities** from **planned production requirements**. It does not claim that future security, orchestration, financial reconciliation, or risk calibration has already been delivered.
 
 ## Solution architecture
 
@@ -130,7 +160,7 @@ This mart aggregates line-level data into:
 
 | KPI | Definition |
 |---|---|
-| **Total spend** | Sum of `ordered quantity × unit price` across purchase-order lines |
+| **Total ordered value** | Sum of `ordered quantity × unit price` across purchase-order lines; the current dashboard labels this “Total Spend” |
 | **On-time delivery %** | Delivered lines received on or before the promised date divided by delivered lines |
 | **Defect rate %** | Total rejected units divided by total inspected units |
 | **Open-order exposure** | Order-line value associated with purchase orders having an `OPEN` status |
@@ -142,12 +172,14 @@ For example, if 1,000 units were promised for March 1, delivered on March 8, and
 
 | KPI | Result |
 |---|---:|
-| Total procurement spend | $528.14M |
+| Total ordered value | $528.14M |
 | On-time delivery | 21.58% |
 | Defect rate | 0.96% |
 | Open-order exposure | $27.41M |
 
 These values describe a synthetic learning scenario and should not be interpreted as real organizational performance. The scenario intentionally produces a visible delivery-performance problem for analysis.
+
+The current total includes `CLOSED`, `OPEN`, and `CANCELLED` lines. The BA decision log recommends the more accurate label **Total Ordered Value** until finance defines whether the required production measure is ordered, committed, received, invoiced, or paid value.
 
 ## Data-quality testing
 
@@ -186,6 +218,8 @@ data/source/          NIST reference CSV files
 data/outputs/         Exports of the final dbt marts
 dashboard/            Dashboard image and Tableau Public link
 docs/                 Architecture, methodology, and data dictionary
+  business-analysis/  Business case, stakeholders, process maps, requirements,
+                      user stories, recommendations, decision log, and UAT workbook
 ```
 
 ## How to reproduce the project
@@ -213,6 +247,8 @@ The Snowflake trial may expire, but the SQL, dbt code, data exports, dashboard i
 
 - Operational transactions are synthetic.
 - Supplier-risk thresholds are illustrative rules rather than a validated production model.
+- The current ordered-value metric includes cancelled and open lines and is not realized accounting spend.
+- All 29 suppliers are classified HIGH in the generated scenario, demonstrating that the risk thresholds require calibration rather than providing useful segmentation.
 - The project demonstrates batch analytics and does not implement real-time ingestion or orchestration.
 - Tableau Public is public and should not contain confidential business data.
 
